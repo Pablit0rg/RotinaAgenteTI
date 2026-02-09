@@ -1,2 +1,29 @@
-Rotina Agente TI - Sistema de Simulação de Rotina DiáriaVisão Geral do ProjetoO projeto Rotina Agente TI é uma aplicação baseada em Java (versão 17 ou superior) desenvolvida para simular e otimizar a rotina diária de um candidato ao cargo de Agente de Tecnologia do Banco do Brasil.O software modela processos estocásticos (probabilísticos) e determinísticos, desde o início do sistema (acordar) até o processamento final (chegada ao local de trabalho/estudo), aplicando rigorosos conceitos de Engenharia de Software, Programação Orientada a Objetos (POO) e Clean Code.O objetivo secundário deste projeto é servir como laboratório prático para fixação de conceitos exigidos pela banca Cesgranrio, estabelecendo paralelos técnicos entre Java e Python, e aprofundando o uso de estruturas modernas da linguagem Java.Tecnologias e Conceitos AplicadosLinguagem: Java 21 (LTS) / Java 17.Framework: Spring Boot (Estrutura base).Paradigmas: Orientação a Objetos e Programação Funcional.Conceitos Chave:Encapsulamento: Proteção de estado crítico (atributos private).Imutabilidade: Uso de constantes (final) e Java Records para integridade de dados.Nulabilidade Segura: Uso da classe Optional<T> para evitar NullPointerException.Modelagem Matemática: Implementação de Regressão Linear para cálculo de probabilidade progressiva.Arquitetura da SoluçãoO sistema é centrado na classe Rotina, que orquestra o ciclo de vida da simulação. A arquitetura foi dividida em responsabilidades distintas:1. Gestão de Estado e ConfiguraçãoO sistema mantém o estado interno através de variáveis encapsuladas que controlam o horário, status do alarme e identificadores de transporte. Constantes são utilizadas para definir regras de negócio imutáveis, como tempos limites de preparação e horários de transporte público.2. Pipeline de Inicialização (Boot)O método acordar(int horaAtual) executa uma verificação rigorosa de horários. Ele calcula o tempo total gasto em tarefas domésticas (vestir, café, higiene) e valida se o tempo total excede o limite estipulado (LIMITE_CASA), emitindo alertas de erro crítico em caso de atrasos.3. Algoritmo de Alocação de Recursos (Assentos)A lógica de embarque no transporte público implementa um algoritmo de alocação de recursos com restrições.Entidade Assento: Modelada como um Java Record (private record Assento), garantindo uma estrutura de dados imutável, leve e segura.Probabilidade Progressiva (Linear Regression Logic):A probabilidade de encontrar um assento vago não é estática; ela evolui com o tempo. O sistema utiliza uma função linear $f(t) = ax + b$ para calcular a chance de sucesso a cada minuto da viagem.Chance Inicial ($b$): 10% (início do trajeto, ônibus lotado).Crescimento ($a$): A taxa é calculada para que a probabilidade atinja 100% ao final de 60 minutos.Fórmula: ChanceAtual = ChanceInicial + (TaxaCrescimento * MinutoAtual)4. Simulação Temporal (Event Loop)O método iniciarTrajeto() executa um laço de repetição que simula a passagem do tempo (de 0 a 60 minutos). A cada iteração (step), o sistema reavalia a disponibilidade de assentos baseada na probabilidade calculada, decidindo dinamicamente se o agente viaja "Sentado" (Modo Economia de Energia) ou "Em Pé" (Modo Alta Performance).Diferenciais Técnicos para Estudos (Foco Cesgranrio)Este código fonte contém implementações específicas para estudo comparativo:Comparação de Strings: Demonstração do uso correto de .equals() para comparação de conteúdo, contrastando com o operador == que compara referências de memória.Tipagem Estática vs Dinâmica: A implementação explícita de tipos (int, boolean, record) serve como contraponto à tipagem dinâmica do Python.Tratamento de Ponto Flutuante: O uso de double para cálculos de probabilidade evita a perda de precisão comum em divisões de inteiros.Como ExecutarCertifique-se de ter o JDK 17+ e o Maven instalados.Clone o repositório.Navegue até a pasta raiz do projeto.Execute o comando via terminal:Bashmvn spring-boot:run
-Ou compile e execute a classe Rotina.java individualmente em sua IDE de preferência.AutorPablo Rosa GomesDesenvolvedor Full-Stack & Agente de TI em Formação
+# Rotina Agente TI - Sistema de Simulação de Rotina Diária
+
+## Visão Geral do Projeto
+O projeto Rotina Agente TI é uma aplicação baseada em Java (LTS) desenvolvida para simular e otimizar a rotina diária de um candidato ao cargo de Agente de Tecnologia. O software modela processos estocásticos e determinísticos, aplicando conceitos de Engenharia de Software, Programação Orientada a Objetos (POO) e Arquitetura em Camadas.
+
+## Arquitetura da Solução
+O sistema foi refatorado para seguir o padrão de arquitetura em camadas, visando desacoplamento e manutenibilidade:
+
+### 1. Model (Camada de Dados)
+Responsável pelas estruturas de dados imutáveis do sistema.
+- **Assento.java**: Implementação de Java Record para representar a entidade de recurso (assento), garantindo imutabilidade e integridade dos dados.
+
+### 2. Equipment (Camada de Hardware/Dispositivos)
+Encapsula a lógica de componentes físicos simulados.
+- **FoneBluetooth.java**: Simula o comportamento de um dispositivo de áudio, incluindo gestão de bateria (decaimento linear) e estado de conexão.
+
+### 3. Service (Camada de Regra de Negócio)
+Orquestra o fluxo de execução e a interação entre os componentes.
+- **Rotina.java**: Controlador principal que gerencia o ciclo de vida da simulação (boot, deslocamento, alocação de recursos e processamento de viagem). Utiliza algoritmos de Regressão Linear para cálculo probabilístico de alocação de assentos.
+
+## Tecnologias Utilizadas
+- **Java 17+**: Linguagem principal.
+- **Maven**: Gerenciamento de dependências e build.
+- **Git**: Controle de versão.
+
+## Como Executar
+1. Certifique-se de ter o JDK 17 instalado.
+2. Clone este repositório.
+3. Execute a classe principal via Maven ou IDE.
