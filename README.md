@@ -27,3 +27,12 @@ Orquestra o fluxo de execução e a interação entre os componentes.
 1. Certifique-se de ter o JDK 17 instalado.
 2. Clone este repositório.
 3. Execute a classe principal via Maven ou IDE.
+
+## 🚀 Roadmap (Próximos Passos)
+O projeto está em constante evolução para simular um ecossistema Enterprise real.
+
+- [x] **Arquitetura Modular**: Separação em Camadas (Model, Service, Repository).
+- [x] **Persistência de Dados**: Implementação de SQL com H2 Database e Spring Data JPA.
+- [ ] **Interoperabilidade**: Exportação de relatórios diários em formato JSON.
+- [ ] **Automação (RPA)**: Integração via Webhook com **n8n** para disparar alertas no Telegram.
+- [ ] **Cibersegurança**: Implementação de sanitização de dados e variáveis de ambiente (.env) para proteção de credenciais.
