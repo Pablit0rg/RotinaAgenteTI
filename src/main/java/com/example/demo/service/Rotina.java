@@ -1,21 +1,28 @@
 package com.example.demo.service;
 
 import com.example.demo.model.Assento;
+import com.example.demo.model.HistoricoViagem; // Import novo
+import com.example.demo.repository.HistoricoRepository; // Import novo
 import com.example.demo.equipment.FoneBluetooth;
+import org.springframework.stereotype.Service; // Import novo
 import java.util.Optional;
 import java.util.Random;
 
+@Service // Agora o Spring gerencia essa classe!
 public class Rotina {
     
+    // Injeção de Dependência (O Spring vai preencher isso pra nós)
+    private final HistoricoRepository repository;
+
     private int horaDespertar = 6;
     private boolean alarmeAtivo = true;
     private final String MEU_ONIBUS = "Vila Palmital 010";
 
+    // Constantes (Mantidas)
     private final int LIMITE_CASA = 40; 
     private final int TEMPO_CAMINHADA_PONTO = 10; 
     private final int HORARIO_ONIBUS = 54; 
     private final int DURACAO_VIAGEM = 60; 
-
     private final int TEMPO_VESTIR = 5;
     private final int TEMPO_CAFE = 15;
     private final int TEMPO_DENTES = 5;
@@ -30,7 +37,10 @@ public class Rotina {
 
     private FoneBluetooth meusFones; 
 
-    public Rotina() {
+    // Construtor com Injeção (O Spring chama esse cara e passa o repository)
+    public Rotina(HistoricoRepository repository) {
+        this.repository = repository; // Guardamos a ferramenta de banco
+        
         int cargaSimulada = random.nextInt(50, 101); 
         this.meusFones = new FoneBluetooth(cargaSimulada);
         System.out.println("🎧 Sistema de Áudio inicializado. Carga: " + cargaSimulada + "%");
@@ -105,8 +115,20 @@ public class Rotina {
             }
         }
         
-        System.out.println("🏁 Chegada ao Destino (Terminal Guadalupe).");
-        System.out.println("📊 Status Final Bateria: " + meusFones.getNivelBateria() + "%");
+        // --- PERSISTÊNCIA NO BANCO (NOVO!) ---
+        System.out.println("🏁 Chegada ao Terminal Guadalupe.");
+        String statusFinal = sentado ? "SENTADO" : "EM PE";
+        int bateriaFinal = meusFones.getNivelBateria();
+        
+        System.out.println("💾 Salvando log no Banco de Dados...");
+        
+        // Cria o objeto para salvar
+        HistoricoViagem log = new HistoricoViagem(statusFinal, bateriaFinal);
+        
+        // Manda o repositório salvar (INSERT INTO TB_HISTORICO...)
+        repository.save(log);
+        
+        System.out.println("✅ Log salvo com sucesso: " + log);
     }
 
     private double calcularChanceAtual(int minutoAtual) {
@@ -123,14 +145,5 @@ public class Rotina {
 
     private void encerrarAlarme() {
         this.alarmeAtivo = false;
-    }
-
-    // MAIN PARA TESTAR
-    public static void main(String[] args) {
-        Rotina rotina = new Rotina();
-        System.out.println(">>> INICIANDO SISTEMA >>>");
-        rotina.acordar(6);
-        System.out.println("\n--- MONITORAMENTO ---");
-        rotina.verificarOnibus("Vila Palmital 010");
     }
 }
