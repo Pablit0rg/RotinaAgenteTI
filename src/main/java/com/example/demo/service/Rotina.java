@@ -1,24 +1,38 @@
 package com.example.demo.service;
 
 import com.example.demo.model.Assento;
-import com.example.demo.model.HistoricoViagem; // Import novo
-import com.example.demo.repository.HistoricoRepository; // Import novo
+import com.example.demo.model.HistoricoViagem;
+import com.example.demo.repository.HistoricoRepository;
 import com.example.demo.equipment.FoneBluetooth;
-import org.springframework.stereotype.Service; // Import novo
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.Optional;
 import java.util.Random;
 
-@Service // Agora o Spring gerencia essa classe!
+@Service
 public class Rotina {
     
-    // Injeção de Dependência (O Spring vai preencher isso pra nós)
     private final HistoricoRepository repository;
+
+    // Lendo a URL do application.properties
+    @Value("${n8n.webhook.url}")
+    private String n8nWebhookUrl;
+
+    // Ferramentas para Web
+    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules(); // Cria o JSON
 
     private int horaDespertar = 6;
     private boolean alarmeAtivo = true;
     private final String MEU_ONIBUS = "Vila Palmital 010";
 
-    // Constantes (Mantidas)
     private final int LIMITE_CASA = 40; 
     private final int TEMPO_CAMINHADA_PONTO = 10; 
     private final int HORARIO_ONIBUS = 54; 
@@ -37,9 +51,8 @@ public class Rotina {
 
     private FoneBluetooth meusFones; 
 
-    // Construtor com Injeção (O Spring chama esse cara e passa o repository)
     public Rotina(HistoricoRepository repository) {
-        this.repository = repository; // Guardamos a ferramenta de banco
+        this.repository = repository;
         
         int cargaSimulada = random.nextInt(50, 101); 
         this.meusFones = new FoneBluetooth(cargaSimulada);
@@ -115,20 +128,47 @@ public class Rotina {
             }
         }
         
-        // --- PERSISTÊNCIA NO BANCO (NOVO!) ---
         System.out.println("🏁 Chegada ao Terminal Guadalupe.");
         String statusFinal = sentado ? "SENTADO" : "EM PE";
         int bateriaFinal = meusFones.getNivelBateria();
         
         System.out.println("💾 Salvando log no Banco de Dados...");
-        
-        // Cria o objeto para salvar
         HistoricoViagem log = new HistoricoViagem(statusFinal, bateriaFinal);
-        
-        // Manda o repositório salvar (INSERT INTO TB_HISTORICO...)
         repository.save(log);
-        
-        System.out.println("✅ Log salvo com sucesso: " + log);
+        System.out.println("✅ Log salvo: " + log);
+
+        // --- DISPARO PARA O N8N ---
+        enviarRelatorioN8N(log);
+    }
+
+    private void enviarRelatorioN8N(HistoricoViagem log) {
+        try {
+            System.out.println("📡 Enviando dados para n8n...");
+            
+            // 1. Converte Objeto Java -> JSON String
+            String jsonPayload = objectMapper.writeValueAsString(log);
+            System.out.println("📦 Payload JSON: " + jsonPayload);
+
+            // 2. Cria a Requisição HTTP POST
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(n8nWebhookUrl))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .build();
+
+            // 3. Envia e espera a resposta
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                System.out.println("🚀 Sucesso! n8n recebeu os dados.");
+            } else {
+                System.out.println("⚠️ n8n retornou erro: " + response.statusCode());
+            }
+
+        } catch (Exception e) {
+            System.out.println("❌ Erro ao conectar com n8n: " + e.getMessage());
+            // Não paramos o programa, apenas logamos o erro (Resiliência)
+        }
     }
 
     private double calcularChanceAtual(int minutoAtual) {
